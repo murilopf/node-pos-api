@@ -9,6 +9,7 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 
 // Definindo as rotas
+const storeRoute = require('./routes/storeRoute');
 const productRoute = require('./routes/productRoute'); 
 const indexRoute = require('./routes/indexRoute');
 
@@ -26,6 +27,9 @@ app.use('/api', indexRoute);
 
 // rota para produto
 app.use('/api/product/', productRoute);
+
+// rota para lojas
+app.use('/api/store/', storeRoute);
 
 app.listen(port, () => {
   console.log("server is up and running..");

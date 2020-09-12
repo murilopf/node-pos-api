@@ -1,38 +1,55 @@
 const express = require('express');
 const router = express.Router();
-const Produto = require('../app/models/product');
-// const mongoose = require('mongoose');
+const Product = require('../app/models/product');
+const Store = require('../app/models/store');
 
-//Rotas para Produto
+//Rotas para Product
 router.post('/', (req, res) => {
-  const product = new Produto();
+  const product = new Product();
+  const id = req.body.storeId;
+
+  if(!id)
+    res.status(500).json({
+      message: "ID da loja inválido"
+    })
+
   product.name = req.body.name;
   product.price = req.body.price;
   product.description = req.body.description;
+  product.store = id;
 
   product.save((error)=> {
     if(error)
-      res.send("Erro ao salvar produto ", error);
+      res.status(500).send(error);
 
-    res.status(201).json({message: 'produto inserido com sucesso'});
+    Store.findById(id, (error, store) => {
+      if(error)
+        res.status(404).json({ message: "Erro ao vincular loja ao produto" });
+
+      store.products.push(product);
+
+      store.save(() => { 
+        res.status(201).json({message: 'produto inserido com sucesso'});
+      })
+    }); 
   })
 });
 
 router.get('/', (req, res) => {
-  Produto.find((error, products)=>{
+  Product.find((error, products)=>{
     if(error)
-      res.send("Erro ao consultar os produtos ", error);
+      res.status(404).send("Erro ao consultar os produtos ", error);
 
     res.status(201).json({
       message: "request success",
       allProduct: products
     })
-  })
+  }).populate('stores');
 });
 
 router.get('/:productId', (req, res) => {
   const id = req.params.productId;
-  Produto.findById(id, (error, product) => {
+  Product.findById(id, (error, product) => {
     if(error){
       res.status(500).json({
         message: "Erro ao tentar encontrar produto; ID inválido"
@@ -52,7 +69,7 @@ router.get('/:productId', (req, res) => {
 
 router.put('/:productId', (req, res) => {
   const id = req.params.productId;
-  Produto.findById(id, (error, product) => {
+  Product.findById(id, (error, product) => {
     if(error){
       res.status(500).json({
         message: "Erro ao tentar encontrar produto; ID inválido"
@@ -74,7 +91,7 @@ router.put('/:productId', (req, res) => {
 
       product.save((error)=> {
         if(error)
-          res.send("Erro ao atualizar o produto ", error);
+          res.status(404).send("Erro ao atualizar o produto ", error);
     
         res.status(200).json({
           message: 'produto atualizado com sucesso',
@@ -87,26 +104,16 @@ router.put('/:productId', (req, res) => {
 
 router.delete('/:productId', (req, res) => {
   const id = req.params.productId;
-  Produto.findById(id, (error, product) => {
-    if(error){
+  Product.findByIdAndRemove(req.params.productId, (error, product) => {
+    if(error)
       res.status(500).json({
-        message: "Erro ao tentar encontrar produto; ID inválido"
-      })
-    }else if(product == null){
-      res.status(400).json({
-        message: "Nenhum produto encontrado com o ID informado"
-      })
-    }else{
-      product.delete((error)=> {
-        if(error)
-          res.send("Erro ao deletar o produto ", error);
-    
-        res.status(200).json({
-          message: 'produto excluido com sucesso'
-        });
-      })
-    }
-  })
+        message: "Erro ao tentar deletar produto"
+      });
+
+      res.status(200).json({
+        message: 'produto excluido com sucesso'
+      });
+  });
 });
 
 module.exports = router;
