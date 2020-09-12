@@ -1,11 +1,32 @@
 const express = require('express');
-const app = express();
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const app = express();
+const dotenv = require('dotenv');
+dotenv.config();
 
-app.user(bodyParser.json());
+// Defir porta onde o servre vai responder
+const port = process.env.PORT || 3000;
 
-app.get('/', (req, res) => res.send("Hello from express"));
+// Definindo as rotas
+const productRoute = require('./routes/productRoute'); 
+const indexRoute = require('./routes/indexRoute');
 
-app.listen(3000, () => {
-  console.log("server is up and running");
+// Persistencia 
+const connectionString = process.env.MONGO_URL;
+mongoose.connect(connectionString,  { useNewUrlParser:true, useUnifiedTopology: true, useFindAndModify: false });
+
+// Configurar o app para usar o body-parser e transformar a req em JSON
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
+// Vincular a aplicaçap(app) com o motor de rotas 
+//rota principal
+app.use('/api', indexRoute);
+
+// rota para produto
+app.use('/api/product/', productRoute);
+
+app.listen(port, () => {
+  console.log("server is up and running..");
 });
