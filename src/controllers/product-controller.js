@@ -1,27 +1,32 @@
-const Product = require('../app/models/product');
 const Store = require('../app/models/store');
+const Product = require('../app/models/product');
+const repository = require('../repositories/product_repository');
 
-exports.post = (req, res) => {
-  const product = new Product();
-  const id = req.body.storeId;
+exports.post = async (req, res) => {
+  try {
+    const id = req.body.storeId;
+    if(!id)
+      res.status(500).json({
+        message: "ID da loja inválido"
+      })
+      
+    await repository.post({
+      name: req.body.name,
+      price: req.body.price,
+      description: req.body.description,
+      store: id,
+    });
 
-  if(!id)
-    res.status(500).json({
-      message: "ID da loja inválido"
-    })
-
-  product.name = req.body.name;
-  product.price = req.body.price;
-  product.description = req.body.description;
-  product.store = id;
-
-  product.save((error)=> {
-    if(error)
-      res.status(500).send(error);
-
-    Store.findById(id, (error, store) => {
+    Store.findById(id, (error, store) => { //passar para repository dps
       if(error)
         res.status(404).json({ message: "Erro ao vincular loja ao produto" });
+
+      product = new Product({
+        name: req.body.name,
+        price: req.body.price,
+        description: req.body.description,
+        store: id,
+      })
 
       store.products.push(product);
 
@@ -29,86 +34,67 @@ exports.post = (req, res) => {
         res.status(201).json({message: 'produto inserido com sucesso'});
       })
     }); 
-  })
+
+  } catch(error) {
+    console.log("ERROR ", error)
+    res.status(500).json({
+      message: "Falha ao processar requisição"
+    });
+  } 
 };
 
-exports.getAll = (req, res) => {
-  Product.find((error, products)=>{
-    if(error)
-      res.status(404).send("Erro ao consultar os produtos ", error);
+exports.getAll = async (req, res) => {
+  try {
+    const data = await repository.getAll();
+    res.status(200).send(data);
+  } catch (error) {
+    res.status(500).send({
+      message: "Falha ao processar requisição.",
+      erro: error
+    });
+  }
+}
 
-    res.status(201).json({
-      message: "request success",
-      allProduct: products
+exports.getById = async (req, res) => {
+  try {
+    const id = req.params.productId;
+    const data = await repository.getById(id);
+    res.status(200).send(data);
+  } catch (error) {
+    res.status(500).send({
+      message: "Falha ao processar requisição",
+      erro: error
+    });
+  }
+}
+
+exports.put = async (req, res) => {
+  try {
+    const id = req.params.productId;
+    const data = await repository.put(id, req.body);
+    res.status(200).send({
+      message: "Produto atualizado com sucesso",
+      dados: data
     })
-  }).populate('stores');
-};
+  } catch (error) {
+    res.status(500).send({
+      message: "Falha ao processar requisição.",
+      erro: error
+    });
+  }
+}
 
-exports.getById = (req, res) => {
-  const id = req.params.productId;
-  Product.findById(id, (error, product) => {
-    if(error){
-      res.status(500).json({
-        message: "Erro ao tentar encontrar produto; ID inválido"
-      })
-    }else if(product == null){
-      res.status(400).json({
-        message: "Nenhum produto encontrado com o ID informado"
-      })
-    }else{
-      res.status(200).json({
-        message: "request success",
-        product: product
-      })
-    }
-  })
-};
-
-exports.put = (req, res) => {
-  const id = req.params.productId;
-  Product.findById(id, (error, product) => {
-    if(error){
-      res.status(500).json({
-        message: "Erro ao tentar encontrar produto; ID inválido"
-      })
-    }else if(product == null){
-      res.status(400).json({
-        message: "Nenhum produto encontrado com o ID informado"
-      })
-    }else{
-
-      if(req.body.name)
-        product.name = req.body.name;
-
-      if(req.body.price)
-        product.price = req.body.price;
-
-      if(req.body.description)
-        product.description = req.body.description;
-
-      product.save((error)=> {
-        if(error)
-          res.status(404).send(`Erro ao atualizar o produto ${error}`);
-    
-        res.status(200).json({
-          message: 'produto atualizado com sucesso',
-          productUpdated: product
-        });
-      })
-    }
-  })
-};
-
-exports.delete = (req, res) => {
-  const id = req.params.productId;
-  Product.findByIdAndRemove(req.params.productId, (error, product) => {
-    if(error)
-      res.status(500).json({
-        message: "Erro ao tentar deletar produto"
-      });
-
-      res.status(200).json({
-        message: 'produto excluido com sucesso'
-      });
-  });
-};
+exports.delete = async (req, res) => {
+  try {
+    const id = req.params.productId;
+    await repository.delete(id)
+    res.status(200).send({
+      message: "Produto removido com sucesso."
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Falha ao processar requisição.",
+      erro: error
+    });
+  }
+}
