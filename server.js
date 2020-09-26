@@ -9,9 +9,10 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 
 // Definindo as rotas
-const storeRoute = require('./routes/storeRoute');
-const productRoute = require('./routes/productRoute'); 
-const indexRoute = require('./routes/indexRoute');
+const storeRoute = require('./src/routes/storeRoute');
+const productRoute = require('./src/routes/productRoute'); 
+const indexRoute = require('./src/routes/indexRoute');
+const customerRoute = require('./src/routes/customerRoute');
 
 // Persistencia 
 const connectionString = process.env.MONGO_URL;
@@ -30,6 +31,8 @@ app.use('/api/product/', productRoute);
 
 // rota para lojas
 app.use('/api/store/', storeRoute);
+
+app.use('/api/customer/', customerRoute);
 
 app.listen(port, () => {
   console.log("server is up and running..");

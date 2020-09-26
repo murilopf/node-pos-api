@@ -1,10 +1,7 @@
-const express = require('express');
-const router = express.Router();
 const Product = require('../app/models/product');
 const Store = require('../app/models/store');
 
-//Rotas para Product
-router.post('/', (req, res) => {
+exports.post = (req, res) => {
   const product = new Product();
   const id = req.body.storeId;
 
@@ -33,9 +30,9 @@ router.post('/', (req, res) => {
       })
     }); 
   })
-});
+};
 
-router.get('/', (req, res) => {
+exports.getAll = (req, res) => {
   Product.find((error, products)=>{
     if(error)
       res.status(404).send("Erro ao consultar os produtos ", error);
@@ -45,9 +42,9 @@ router.get('/', (req, res) => {
       allProduct: products
     })
   }).populate('stores');
-});
+};
 
-router.get('/:productId', (req, res) => {
+exports.getById = (req, res) => {
   const id = req.params.productId;
   Product.findById(id, (error, product) => {
     if(error){
@@ -65,9 +62,9 @@ router.get('/:productId', (req, res) => {
       })
     }
   })
-});
+};
 
-router.put('/:productId', (req, res) => {
+exports.put = (req, res) => {
   const id = req.params.productId;
   Product.findById(id, (error, product) => {
     if(error){
@@ -91,7 +88,7 @@ router.put('/:productId', (req, res) => {
 
       product.save((error)=> {
         if(error)
-          res.status(404).send("Erro ao atualizar o produto ", error);
+          res.status(404).send(`Erro ao atualizar o produto ${error}`);
     
         res.status(200).json({
           message: 'produto atualizado com sucesso',
@@ -100,9 +97,9 @@ router.put('/:productId', (req, res) => {
       })
     }
   })
-});
+};
 
-router.delete('/:productId', (req, res) => {
+exports.delete = (req, res) => {
   const id = req.params.productId;
   Product.findByIdAndRemove(req.params.productId, (error, product) => {
     if(error)
@@ -114,6 +111,4 @@ router.delete('/:productId', (req, res) => {
         message: 'produto excluido com sucesso'
       });
   });
-});
-
-module.exports = router;
+};
